@@ -12,43 +12,17 @@ services:
       - jenkins_home:/var/jenkins_home # Persistent storage for Jenkins data
     networks:
       - jenkins_ansible_network
-    deploy:
-      replicas: 3
-      restart_policy:
-        condition: on-failure
 
-  ansible:
-    image: quay.io/ansible/awx
-    deploy:
-      replicas: 3
-      restart_policy:
-        condition: on-failure
+  jenkins_agent:
+    image: jenkins/inbound-agent
     environment:
-      - SECRET_KEY=mysecretkey
-      - DATABASE_NAME=awx
-      - DATABASE_USER=awx
-      - DATABASE_PASSWORD=awxpass
-      - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
-    networks:
-      - jenkins_ansible_network
-    depends_on:
-      - postgres
-
-  postgres:
-    image: postgres:13
-    environment:
-      - POSTGRES_DB=awx
-      - POSTGRES_USER=awx
-      - POSTGRES_PASSWORD=awxpass
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - JENKINS_URL=http://jenkins:8080/jenkins
+      - JENKINS_SECRET=<your-agent-secret>
+      - JENKINS_AGENT_NAME=agent-${HOSTNAME}
     networks:
       - jenkins_ansible_network
     deploy:
       replicas: 3
-      restart_policy:
-        condition: on-failure
 
 networks:
   jenkins_ansible_network:
@@ -56,4 +30,3 @@ networks:
 
 volumes:
   jenkins_home:
-  postgres_data:
