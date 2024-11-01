@@ -12,6 +12,8 @@ services:
       - jenkins_home:/var/jenkins_home # Persistent storage for Jenkins data
     networks:
       - jenkins_ansible_network
+    deploy:
+      replicas: 1 # Typically only one Jenkins master
 
   jenkins_agent:
     image: jenkins/inbound-agent
@@ -22,7 +24,38 @@ services:
     networks:
       - jenkins_ansible_network
     deploy:
+      replicas: 3 # Scale Jenkins agents to 3
+
+  ansible:
+    image: quay.io/ansible/awx
+    deploy:
       replicas: 3
+      restart_policy:
+        condition: on-failure
+    environment:
+      - SECRET_KEY=mysecretkey
+      - DATABASE_NAME=awx
+      - DATABASE_USER=awx
+      - DATABASE_PASSWORD=awxpass
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+    networks:
+      - jenkins_ansible_network
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=awx
+      - POSTGRES_USER=awx
+      - POSTGRES_PASSWORD=awxpass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - jenkins_ansible_network
+    deploy:
+      replicas: 3 # Scale PostgreSQL to 3 instances, if needed
 
 networks:
   jenkins_ansible_network:
@@ -30,3 +63,4 @@ networks:
 
 volumes:
   jenkins_home:
+  postgres_data:
