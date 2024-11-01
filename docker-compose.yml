@@ -12,15 +12,17 @@ services:
       - jenkins_home:/var/jenkins_home # Persistent storage for Jenkins data
     networks:
       - jenkins_ansible_network
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
 
   ansible:
     image: quay.io/ansible/awx
     deploy:
-      replicas: 2
+      replicas: 3
       restart_policy:
         condition: on-failure
-    ports:
-      - "8081" # Internal port (can be accessed through the Jenkins container)
     environment:
       - SECRET_KEY=mysecretkey
       - DATABASE_NAME=awx
@@ -43,6 +45,10 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - jenkins_ansible_network
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
 
 networks:
   jenkins_ansible_network:
